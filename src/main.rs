@@ -14,18 +14,45 @@ fn main() {
     let mut file = match File::open(&path) {
         // The `description` method of `io::Error` returns a string that
         // describes the error
-        Err(why) => panic!("couldn't open {}: {}", display,
-                                                   why.description()),
+        Err(e) => panic!("couldn't open {}: {}", display,
+                                                   e.description()),
         Ok(file) => file,
     };
 
     let mut s = String::new();
     match file.read_to_string(&mut s) {
-        Err(why) => panic!("couldn't read {}: {}", display,
-                                                   why.description()),
+        Err(e) => panic!("couldn't read {}: {}", display,
+                                                   e.description()),
         Ok(_) => {},
     }
 
+    let lines: Vec<&str> = s.lines().collect::<Vec<&str>>();
+    let mut cpu_data: Vec<f64> = Vec::with_capacity(5);
+
+    for line in lines {
+        let words: Vec<&str> = line.split_whitespace().collect::<Vec<&str>>();
+        // I could use a regular expression on each line to at least ensure that all of the unwrap
+        // calls are at least warrented, but I think I'll be fine
+        if words.len() >= 8 && words[0].starts_with("cpu") {
+            let n1 = words[1].parse::<f64>().unwrap();  // user:    normal processes in user mode
+         // let n2 = words[2].parse::<f64>().unwrap();  // nice:    niced processes executing in user mode
+            let n3 = words[3].parse::<f64>().unwrap();  // system:  processes executing in user mode
+            let n4 = words[4].parse::<f64>().unwrap();  // idle:    twiddling thumbs
+            let n5 = words[5].parse::<f64>().unwrap();  // iowait:  waiting for I/O to complete
+            let n6 = words[6].parse::<f64>().unwrap();  // irq:     servicing interrupts
+            let n7 = words[7].parse::<f64>().unwrap();  // softirq: servicing softirqs
+
+            cpu_data.push( ( (n1+n3+n5+n6+n7) / (n1+n3+n4) ) * 100.0 );
+        } else {
+            break   // Once that if is false, we don't need to go any further
+        }
+    }
+
+    for n in cpu_data {
+        println!("{}", (((n * 100.0) as i64) / 100) );
+    }
+
+    /*
     let mut word = s.split_whitespace();
     // let data = word.collect::<Vec<&str>>();
 
@@ -36,4 +63,5 @@ fn main() {
     let n3 = word.next().unwrap().parse::<f64>().unwrap();
 
     println!("{}", {(n1+n2)/(n1+n2+n3)*100.0}.trunc());
+    */
 }

@@ -1,4 +1,4 @@
-[root]
+[[package]]
 name = "proc_stat"
 version = "0.1.0"
 
